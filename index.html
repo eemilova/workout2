@@ -585,6 +585,7 @@ body {
           <select id="quickExMtype">
             <option value="reps">Reps</option>
             <option value="time">Time (sec)</option>
+            <option value="cardio">Cardio (min)</option>
           </select>
         </div>
         <div class="form-group">
@@ -647,6 +648,7 @@ body {
           <select id="freeExMtype">
             <option value="reps">Reps</option>
             <option value="time">Time (sec)</option>
+            <option value="cardio">Cardio (min)</option>
           </select>
         </div>
         <div class="form-group">
@@ -788,18 +790,7 @@ const DEFAULT_TEMPLATES = {
       { name: 'Chest-Supported Row Machine', sets: 3, reps: '12-15', note: 'Squeeze shoulder blades', measureType: 'reps' },
       { name: 'Dumbbell Bicep Curl', sets: 2, reps: '12', note: 'Controlled movement', measureType: 'reps' },
       { name: 'Face Pulls (cable)', sets: 2, reps: '15', note: 'Great for posture', measureType: 'reps' },
-      { name: 'Treadmill', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' },
-    ]
-  },
-  upperB: {
-    label: 'Upper Day B',
-    type: 'Chest & Shoulders',
-    exercises: [
-      { name: 'Chest Press Machine', sets: 3, reps: '12', note: 'Full range of motion', measureType: 'reps' },
-      { name: 'Shoulder Press Machine', sets: 3, reps: '12', note: 'Do not lock elbows', measureType: 'reps' },
-      { name: 'Dumbbell Lateral Raise', sets: 2, reps: '15', note: 'Light weight, slow', measureType: 'reps' },
-      { name: 'Tricep Pushdown (cable)', sets: 2, reps: '12', note: 'Keep elbows at sides', measureType: 'reps' },
-      { name: 'Treadmill', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' },
+      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' },
     ]
   },
   lowerA: {
@@ -810,7 +801,18 @@ const DEFAULT_TEMPLATES = {
       { name: 'Leg Press', sets: 3, reps: '12', note: 'Low & narrow foot placement', measureType: 'reps' },
       { name: 'Glute Kickback Machine', sets: 3, reps: '15', note: 'Squeeze at the top', measureType: 'reps' },
       { name: 'Abdominal Crunch Machine', sets: 3, reps: '15', note: 'Slow & controlled', measureType: 'reps' },
-      { name: 'Treadmill', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' },
+      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' },
+    ]
+  },
+  upperB: {
+    label: 'Upper Day B',
+    type: 'Chest & Shoulders',
+    exercises: [
+      { name: 'Chest Press Machine', sets: 3, reps: '12', note: 'Full range of motion', measureType: 'reps' },
+      { name: 'Shoulder Press Machine', sets: 3, reps: '12', note: 'Do not lock elbows', measureType: 'reps' },
+      { name: 'Dumbbell Lateral Raise', sets: 2, reps: '15', note: 'Light weight, slow', measureType: 'reps' },
+      { name: 'Tricep Pushdown (cable)', sets: 2, reps: '12', note: 'Keep elbows at sides', measureType: 'reps' },
+      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' },
     ]
   },
   lowerB: {
@@ -821,7 +823,7 @@ const DEFAULT_TEMPLATES = {
       { name: 'Leg Press (low & narrow)', sets: 2, reps: '12', note: 'Quad focus', measureType: 'reps' },
       { name: 'Leg Press (high & wide)', sets: 2, reps: '12', note: 'Hamstring & glute focus', measureType: 'reps' },
       { name: 'Glute Kickback Machine', sets: 2, reps: '15', note: 'Both legs equally', measureType: 'reps' },
-      { name: 'Treadmill', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' },
+      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' },
     ]
   }
 };
@@ -1717,20 +1719,22 @@ function renderFreeLogArea() {
   freeExercises.forEach((ex, exIdx) => {
     const sets = freeLog[ex.name] || [];
     const isTime = ex.measureType === 'time';
+    const isCardio = ex.measureType === 'cardio';
     const safeId = 'free_' + exIdx;
     const block = document.createElement('div');
     block.className = 'log-exercise-block';
 
     const header = document.createElement('div');
     header.className = 'log-ex-header';
+    const unitLabel = isTime ? 'sec' : isCardio ? 'min' : 'reps';
     header.innerHTML = `
       <div>
         <div class="log-ex-name">${ex.name}</div>
-        <div class="log-ex-target">${ex.sets} × ${ex.reps} ${isTime ? 'sec' : 'reps'}</div>
+        <div class="log-ex-target">${ex.sets} × ${ex.reps} ${unitLabel}</div>
       </div>
       <div style="display:flex;gap:6px;align-items:center">
         <span style="font-size:12px;color:var(--muted)">${sets.length}/${ex.sets} sets</span>
-        <button class="btn btn-danger btn-sm btn-icon" title="Remove exercise" onclick="removeFreeExercise(${exIdx})">🗑</button>
+        <button class="btn btn-danger btn-sm btn-icon" title="Remove exercise" onclick="removeFreeExercise(${exIdx})">&#x1F5D1;</button>
       </div>`;
     block.appendChild(header);
 
@@ -1742,11 +1746,11 @@ function renderFreeLogArea() {
       sets.forEach((s, si) => {
         const row = document.createElement('div');
         row.className = 'log-set-row';
-        const valText = s.type === 'time' ? `${s.duration} sec` : `${s.reps} reps @ ${s.weight} kg`;
+        const valText = s.type === 'time' ? `${s.duration} sec` : s.type === 'cardio' ? `${s.duration} min` : `${s.reps} reps @ ${s.weight} kg`;
         row.innerHTML = `
           <span class="set-num">${si + 1}</span>
           <span class="set-val">${valText}</span>
-          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteFreeSet('${ex.name}',${si})">✕</button>`;
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteFreeSet('${ex.name}',${si})">&#x2715;</button>`;
         setsList.appendChild(row);
       });
     }
@@ -1758,6 +1762,10 @@ function renderFreeLogArea() {
       inputRow.innerHTML = `
         <div><label>Seconds</label><input type="number" step="1" placeholder="e.g. 45" id="${safeId}_d" /></div>
         <button class="btn btn-primary btn-sm" onclick="addFreeSet('${ex.name}','${safeId}')">+ Set</button>`;
+    } else if (isCardio) {
+      inputRow.innerHTML = `
+        <div><label>Minutes</label><input type="number" step="1" placeholder="e.g. 15" id="${safeId}_c" /></div>
+        <button class="btn btn-primary btn-sm" onclick="addFreeSet('${ex.name}','${safeId}')">+ Log</button>`;
     } else {
       inputRow.innerHTML = `
         <div><label>kg</label><input type="number" step="0.5" placeholder="e.g. 40" id="${safeId}_w" /></div>
@@ -1779,6 +1787,12 @@ function addFreeSet(exName, safeId) {
     if (isNaN(d) || d <= 0) { showToast('Enter seconds'); return; }
     freeLog[exName].push({ type: 'time', duration: d });
     if (dEl) dEl.value = '';
+  } else if (ex.measureType === 'cardio') {
+    const cEl = document.getElementById(safeId + '_c');
+    const c = parseInt(cEl ? cEl.value : '', 10);
+    if (isNaN(c) || c <= 0) { showToast('Enter minutes'); return; }
+    freeLog[exName].push({ type: 'cardio', duration: c });
+    if (cEl) cEl.value = '';
   } else {
     const wEl = document.getElementById(safeId + '_w');
     const rEl = document.getElementById(safeId + '_r');
