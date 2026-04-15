@@ -516,7 +516,10 @@ body {
 
   <div class="sidebar-section">
     <div class="sidebar-section-title">Navigation</div>
-    <button class="nav-btn active" onclick="showPage('today')" id="navToday">
+    <button class="nav-btn active" onclick="showPage('home')" id="navHome">
+      <span class="icon">🏠</span> Home
+    </button>
+    <button class="nav-btn" onclick="showPage('today')" id="navToday">
       <span class="icon">📋</span> Today's Workout
     </button>
     <button class="nav-btn" onclick="showPage('history')" id="navHistory">
@@ -578,7 +581,7 @@ body {
       <div class="form-row">
         <div class="form-group" style="flex:2">
           <label>Exercise</label>
-          <input id="quickExName" placeholder="e.g. Face Pull" />
+          <input id="quickExName" placeholder="e.g. Face Pull" list="exerciseNameDatalist" autocomplete="off" />
         </div>
         <div class="form-group">
           <label>Type</label>
@@ -641,7 +644,7 @@ body {
       <div class="form-row">
         <div class="form-group" style="flex:2">
           <label>Exercise</label>
-          <input id="freeExName" placeholder="e.g. Pull-ups" />
+          <input id="freeExName" placeholder="e.g. Pull-ups" list="exerciseNameDatalist" autocomplete="off" />
         </div>
         <div class="form-group">
           <label>Type</label>
@@ -732,7 +735,11 @@ body {
 
 <!-- Mobile bottom nav -->
 <nav class="mobile-nav" id="mobileNav">
-  <button class="mobile-nav-btn active" id="mnavToday" onclick="showPage('today');closeDayPicker()">
+  <button class="mobile-nav-btn active" id="mnavHome" onclick="showPage('home');closeDayPicker()">
+    <span class="micon">🏠</span>
+    <span>Home</span>
+  </button>
+  <button class="mobile-nav-btn" id="mnavToday" onclick="showPage('today');closeDayPicker()">
     <span class="micon">📋</span>
     <span>Today</span>
   </button>
@@ -832,6 +839,7 @@ let templates = JSON.parse(localStorage.getItem(TEMPLATE_KEY) || 'null') || JSON
 let history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let currentDayKey = null;
 let todayLog = {}; // { exName: [ {reps, weight}, ... ] }
+let todayExtraExercises = []; // session-only extras, never saved to template
 let chartInstance = null;
 
 // ===================== MOBILE NAV =====================
@@ -843,7 +851,7 @@ function closeDayPicker() {
   document.getElementById('dayPickerSheet').classList.remove('open');
 }
 function syncMobileNav(name) {
-  const map = { today: 'mnavToday', history: 'mnavHistory', chart: 'mnavChart', templates: 'mnavTemplates', free: 'mnavDays' };
+  const map = { home: 'mnavHome', today: 'mnavToday', history: 'mnavHistory', chart: 'mnavChart', templates: 'mnavTemplates', free: 'mnavDays' };
   document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
   if (map[name]) document.getElementById(map[name]).classList.add('active');
 }
@@ -912,10 +920,17 @@ function showPage(name) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   syncMobileNav(name);
 
-  if (name === 'today') {
+  if (name === 'home') {
+    document.getElementById('pageTodayEmpty').classList.add('active');
+    document.getElementById('navHome').classList.add('active');
+    renderQuickStats();
+  } else if (name === 'today') {
     if (currentDayKey) {
       document.getElementById('pageToday').classList.add('active');
+    } else if (freeExercises && freeExercises.length > 0) {
+      document.getElementById('pageFree').classList.add('active');
     } else {
+      // No active workout — show home/empty state instead
       document.getElementById('pageTodayEmpty').classList.add('active');
       renderQuickStats();
     }
@@ -941,6 +956,7 @@ function showPage(name) {
 function loadDayTemplate(dayKey) {
   currentDayKey = dayKey;
   todayLog = {};
+  todayExtraExercises = [];
   const day = templates[dayKey];
 
   // init log structure
@@ -1034,6 +1050,80 @@ function renderLogArea() {
 
     area.appendChild(block);
   });
+
+  // Render session-only extra exercises (not saved to template)
+  todayExtraExercises.forEach((ex, exIdx) => {
+    const sets = todayLog[ex.name] || [];
+    const isTime = (ex.measureType === 'time');
+    const isCardio = (ex.measureType === 'cardio');
+    const block = document.createElement('div');
+    block.className = 'log-exercise-block';
+    block.id = 'logblock_' + btoa(encodeURIComponent(ex.name)).replace(/=/g,'');
+    block.style.borderColor = '#c8dcc8';
+
+    const header = document.createElement('div');
+    header.className = 'log-ex-header';
+    header.style.background = '#f0f8f0';
+    const allDone = sets.length >= ex.sets;
+    header.innerHTML = `
+      <div>
+        <div class="log-ex-name">${ex.name} <span style="font-size:10px;color:var(--accent);background:#dff0df;border-radius:4px;padding:1px 6px;margin-left:4px">today only</span></div>
+        <div class="log-ex-target">${ex.sets} × ${ex.reps}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        ${allDone
+          ? '<span style="font-size:16px" title="All sets done!">&#x2705;</span>'
+          : `<span style="font-size:12px;color:var(--muted)">${sets.length}/${ex.sets} sets</span>`}
+        <button class="btn btn-danger btn-sm btn-icon" title="Remove" onclick="removeExtraExercise(${exIdx})">&#x1F5D1;</button>
+      </div>`;
+    block.appendChild(header);
+
+    const setsList = document.createElement('div');
+    setsList.className = 'log-sets-list';
+    if (sets.length === 0) {
+      setsList.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:6px 0">No sets logged yet.</div>';
+    } else {
+      sets.forEach((s, si) => {
+        const row = document.createElement('div');
+        row.className = 'log-set-row';
+        const valText = s.type === 'time' ? `${s.duration} sec` : s.type === 'cardio' ? `${s.duration} min` : `${s.reps} reps @ ${s.weight} kg`;
+        row.innerHTML = `
+          <span class="set-num">${si + 1}</span>
+          <span class="set-val">${valText}</span>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteSet('${ex.name}',${si})">&#x2715;</button>`;
+        setsList.appendChild(row);
+      });
+    }
+    block.appendChild(setsList);
+
+    const inputRow = document.createElement('div');
+    inputRow.className = 'log-set-inputs';
+    const safeId = btoa(encodeURIComponent(ex.name)).replace(/=/g,'');
+    if (isTime) {
+      inputRow.innerHTML = `
+        <div><label>Seconds</label><input type="number" step="1" placeholder="e.g. 45" id="d_${safeId}" /></div>
+        <button class="btn btn-primary btn-sm" onclick="addSet('${ex.name}')">+ Set</button>`;
+    } else if (isCardio) {
+      inputRow.innerHTML = `
+        <div><label>Minutes</label><input type="number" step="1" placeholder="e.g. 15" id="c_${safeId}" /></div>
+        <button class="btn btn-primary btn-sm" onclick="addSet('${ex.name}')">+ Log</button>`;
+    } else {
+      const lastW = getLastLoggedWeight(ex.name);
+      inputRow.innerHTML = `
+        <div><label>kg</label><input type="number" step="0.5" placeholder="e.g. 40" id="w_${safeId}" ${lastW !== null ? `value="${lastW}"` : ''} /></div>
+        <div><label>Reps</label><input type="number" step="1" placeholder="e.g. 10" id="r_${safeId}" /></div>
+        <button class="btn btn-primary btn-sm" onclick="addSet('${ex.name}')">+ Set</button>`;
+    }
+    block.appendChild(inputRow);
+    area.appendChild(block);
+  });
+}
+
+function removeExtraExercise(exIdx) {
+  const ex = todayExtraExercises[exIdx];
+  delete todayLog[ex.name];
+  todayExtraExercises.splice(exIdx, 1);
+  renderLogArea();
 }
 
 function getLastLoggedWeight(exName) {
@@ -1050,7 +1140,7 @@ function getLastLoggedWeight(exName) {
 function addSet(exName) {
   const id = btoa(encodeURIComponent(exName)).replace(/=/g,'');
   const day = templates[currentDayKey];
-  const ex = day.exercises.find(e => e.name === exName);
+  const ex = day.exercises.find(e => e.name === exName) || todayExtraExercises.find(e => e.name === exName);
   const isTime = ex && ex.measureType === 'time';
   const isCardio = ex && ex.measureType === 'cardio';
 
@@ -1096,13 +1186,16 @@ function addQuickExercise() {
   const reps = document.getElementById('quickExReps').value.trim() || '12';
   const measureType = document.getElementById('quickExMtype').value;
   if (!name) { showToast('Enter exercise name'); return; }
-  templates[currentDayKey].exercises.push({ name, sets, reps, note: 'added manually', measureType });
+  // Check not already in template or extras
+  const allNames = [...templates[currentDayKey].exercises, ...todayExtraExercises].map(e => e.name);
+  if (allNames.includes(name)) { showToast('Exercise already in today\'s workout'); return; }
+  todayExtraExercises.push({ name, sets, reps, note: '', measureType });
   todayLog[name] = [];
-  saveTemplates();
+  // Do NOT call saveTemplates() — this is session-only
   document.getElementById('quickExName').value = '';
   document.getElementById('quickExReps').value = '';
   renderLogArea();
-  showToast('&#x2713; ' + name + ' added');
+  showToast('✓ ' + name + ' added for today');
 }
 
 function clearWorkout() {
@@ -1134,11 +1227,26 @@ function saveWorkout() {
       });
     }
   });
+  todayExtraExercises.forEach(ex => {
+    const sets = todayLog[ex.name];
+    if (sets && sets.length > 0) {
+      workout.push({
+        name: ex.name,
+        measureType: ex.measureType || 'reps',
+        sets: sets.map(s =>
+          s.type === 'time' ? { type: 'time', duration: s.duration } :
+          s.type === 'cardio' ? { type: 'cardio', duration: s.duration } :
+          { type: 'reps', reps: s.reps, weight: s.weight }
+        )
+      });
+    }
+  });
 
   history.push({ date, dayLabel: day.label + ' — ' + day.type, workout });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
   localStorage.removeItem(AUTOSAVE_KEY);
   lastAutosaveHash = '';
+  buildExerciseDatalist();
 
   // Show success screen
   const totalSets = workout.reduce((s, ex) => s + ex.sets.length, 0);
@@ -1191,8 +1299,9 @@ function renderHistory() {
         <strong>${h.date}</strong>
         <span style="font-size:12px;color:var(--muted);margin-left:10px">${h.dayLabel || ''}</span>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <span style="font-size:12px;color:var(--muted)">${Math.round(vol).toLocaleString()} kg volume</span>
+      <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+        <span style="font-size:12px;color:var(--muted)">${Math.round(vol).toLocaleString()} kg vol</span>
+        <button class="btn btn-ghost btn-sm" title="Repeat this workout" onclick="repeatWorkoutFromHistory(${i},event)">▶ Repeat</button>
         <button class="btn btn-danger btn-sm" onclick="deleteHistory(${i},event)">✕</button>
       </div>`;
     head.addEventListener('click', (e) => {
@@ -1207,7 +1316,7 @@ function renderHistory() {
       const d = document.createElement('div');
       d.className = 'history-ex';
       d.innerHTML = `<div class="history-ex-name">${ex.name}</div>
-        <div class="history-ex-sets">${ex.sets.map((s,i)=> s.type==='time' ? `Set ${i+1}: ${s.duration} sec` : `Set ${i+1}: ${s.reps} reps @ ${s.weight} kg`).join(' · ')}</div>`;
+        <div class="history-ex-sets">${ex.sets.map((s,i)=> s.type==='time' ? `Set ${i+1}: ${s.duration} sec` : s.type==='cardio' ? `${s.duration} min` : `Set ${i+1}: ${s.reps} reps @ ${s.weight} kg`).join(' · ')}</div>`;
       body.appendChild(d);
     });
     block.appendChild(body);
@@ -1221,6 +1330,51 @@ function deleteHistory(i, e) {
   history.splice(i, 1);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
   renderHistory();
+}
+
+function repeatWorkoutFromHistory(i, e) {
+  e.stopPropagation();
+  const h = history[i];
+  if (!confirm('Load "' + (h.dayLabel || 'this workout') + '" from ' + h.date + ' as today\'s session?')) return;
+
+  // Try to find a matching template by dayLabel
+  const matchKey = Object.keys(templates).find(k => (templates[k].label + ' — ' + templates[k].type) === h.dayLabel);
+
+  if (matchKey) {
+    // Use existing template but pre-fill weights from history
+    currentDayKey = matchKey;
+    todayLog = {};
+    const day = templates[matchKey];
+    day.exercises.forEach(ex => { todayLog[ex.name] = []; });
+    document.getElementById('todayDayName').textContent = day.label;
+    document.getElementById('todayDayMeta').textContent = day.type;
+    document.querySelectorAll('.day-nav-btn').forEach(b => b.classList.remove('active'));
+    const navEl = document.getElementById('dayNav' + capitalize(matchKey));
+    if (navEl) navEl.classList.add('active');
+    renderLogArea();
+  } else {
+    // Free-form: load all exercises from that history entry as a free workout
+    currentDayKey = null;
+    freeExercises = [];
+    freeLog = {};
+    document.querySelectorAll('.day-nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('dayNavFree').classList.add('active');
+    document.getElementById('freeDayName').textContent = h.dayLabel || 'Repeated Workout';
+    document.getElementById('freeDayMeta').textContent = 'from ' + h.date;
+    document.getElementById('freeSessionName').value = h.dayLabel || '';
+    document.getElementById('freeSessionType').value = 'from ' + h.date;
+    h.workout.forEach(ex => {
+      freeExercises.push({ name: ex.name, sets: ex.sets.length || 3, reps: '12', measureType: ex.measureType || 'reps' });
+      freeLog[ex.name] = [];
+    });
+    renderFreeLogArea();
+    showPage('free');
+    showToast('✓ Workout loaded — log your sets!');
+    return;
+  }
+
+  showPage('today');
+  showToast('✓ Workout loaded — log your sets!');
 }
 
 // ===================== CHART / PROGRESS =====================
@@ -1391,7 +1545,7 @@ function renderTemplateEditor() {
     <div class="template-list" id="tmpl_${dayKey}"></div>
     <div class="add-ex-form" id="addform_${dayKey}">
       <div class="form-row">
-        <div class="form-group" style="flex:2"><label>Exercise</label><input id="tname_${dayKey}" placeholder="e.g. Face Pull" /></div>
+        <div class="form-group" style="flex:2"><label>Exercise</label><input id="tname_${dayKey}" placeholder="e.g. Face Pull" list="exerciseNameDatalist" autocomplete="off" /></div>
         <div class="form-group"><label>Sets</label><input type="number" id="tsets_${dayKey}" value="3" min="1" max="10" /></div>
         <div class="form-group">
           <label>Type</label>
@@ -1562,7 +1716,32 @@ function renderQuickStats() {
   }).length;
   const totalVol = history.reduce((s,h)=>s+h.workout.reduce((a,ex)=>a+ex.sets.filter(x=>x.type==='reps').reduce((b,c)=>b+c.reps*c.weight,0),0),0);
 
-  el.innerHTML = `
+  // Active workout banner
+  let activeBanner = '';
+  if (currentDayKey) {
+    const day = templates[currentDayKey];
+    const setsLogged = Object.values(todayLog).reduce((s, sets) => s + sets.length, 0);
+    activeBanner = `
+      <div style="width:100%;background:linear-gradient(135deg,#1a7a5e,#22a078);border-radius:12px;padding:16px 20px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-weight:600;color:#fff;font-size:15px">🏋️ ${day.label} in progress</div>
+          <div style="color:rgba(255,255,255,0.75);font-size:12px;margin-top:2px">${day.type} · ${setsLogged} set${setsLogged !== 1 ? 's' : ''} logged</div>
+        </div>
+        <button class="btn" style="background:#fff;color:#1a7a5e;font-weight:600;padding:9px 18px" onclick="showPage('today')">Resume →</button>
+      </div>`;
+  } else if (freeExercises && freeExercises.length > 0) {
+    const setsLogged = Object.values(freeLog).reduce((s, sets) => s + sets.length, 0);
+    activeBanner = `
+      <div style="width:100%;background:linear-gradient(135deg,#1a6fa8,#2196d3);border-radius:12px;padding:16px 20px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-weight:600;color:#fff;font-size:15px">🏋️ Free Workout in progress</div>
+          <div style="color:rgba(255,255,255,0.75);font-size:12px;margin-top:2px">${setsLogged} set${setsLogged !== 1 ? 's' : ''} logged</div>
+        </div>
+        <button class="btn" style="background:#fff;color:#1a6fa8;font-weight:600;padding:9px 18px" onclick="showPage('today')">Resume →</button>
+      </div>`;
+  }
+
+  el.innerHTML = activeBanner + `
     <div class="stat-chip"><div class="val">${totalWorkouts}</div><div class="lbl">Total workouts</div></div>
     <div class="stat-chip"><div class="val">${thisWeek}</div><div class="lbl">This week</div></div>
     <div class="stat-chip"><div class="val">${Math.round(totalVol/1000)}t</div><div class="lbl">Total volume (tonnes)</div></div>`;
@@ -1600,7 +1779,7 @@ let autosaveTimer = null;
 let lastAutosaveHash = '';
 
 function getSessionHash() {
-  return JSON.stringify({ day: currentDayKey, log: todayLog });
+  return JSON.stringify({ day: currentDayKey, log: todayLog, extras: todayExtraExercises });
 }
 
 function autosaveSession() {
@@ -1620,6 +1799,7 @@ function autosaveSession() {
     localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
       dayKey: currentDayKey,
       log: todayLog,
+      extras: todayExtraExercises,
       savedAt: new Date().toISOString()
     }));
     lastAutosaveHash = hash;
@@ -1646,6 +1826,7 @@ function restoreAutosave() {
     if (confirm(`Unsaved workout found from ${timeStr} (${day.label}). Restore it?`)) {
       currentDayKey = data.dayKey;
       todayLog = data.log;
+      todayExtraExercises = data.extras || [];
       // make sure all current template exercises are in log
       day.exercises.forEach(ex => { if (!todayLog[ex.name]) todayLog[ex.name] = []; });
       document.getElementById('todayDayName').textContent = day.label;
@@ -1664,6 +1845,66 @@ function restoreAutosave() {
 function startAutosaveTimer() {
   if (autosaveTimer) clearInterval(autosaveTimer);
   autosaveTimer = setInterval(autosaveSession, 30000);
+}
+
+// Force-save on tab close / page unload
+window.addEventListener('beforeunload', () => {
+  if (!currentDayKey) return;
+  const hasAny = Object.values(todayLog).some(sets => sets.length > 0);
+  if (!hasAny) return;
+  localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
+    dayKey: currentDayKey,
+    log: todayLog,
+    extras: todayExtraExercises,
+    savedAt: new Date().toISOString()
+  }));
+});
+
+// End-of-day auto-commit: if midnight passes with an unsaved autosave, commit it to history
+function checkEndOfDayAutoCommit() {
+  const saved = localStorage.getItem(AUTOSAVE_KEY);
+  if (!saved) return;
+  try {
+    const data = JSON.parse(saved);
+    if (!data.dayKey || !data.log) return;
+    const savedAt = new Date(data.savedAt);
+    const now = new Date();
+    // If the autosave is from a previous calendar day, auto-commit it
+    const savedDate = savedAt.toISOString().split('T')[0];
+    const todayDate = now.toISOString().split('T')[0];
+    if (savedDate < todayDate) {
+      const day = templates[data.dayKey];
+      if (!day) { localStorage.removeItem(AUTOSAVE_KEY); return; }
+      const workout = [];
+      day.exercises.forEach(ex => {
+        const sets = data.log[ex.name];
+        if (sets && sets.length > 0) workout.push({ name: ex.name, measureType: ex.measureType || 'reps', sets });
+      });
+      if (workout.length > 0) {
+        history.push({ date: savedDate, dayLabel: day.label + ' — ' + day.type, workout, autoSaved: true });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+        console.log('Auto-committed workout from', savedDate);
+      }
+      localStorage.removeItem(AUTOSAVE_KEY);
+    }
+  } catch(e) {}
+}
+
+// ===================== EXERCISE AUTOCOMPLETE =====================
+function getKnownExerciseNames() {
+  const fromHistory = history.flatMap(h => h.workout.map(ex => ex.name));
+  const fromTemplates = Object.values(templates).flatMap(d => d.exercises.map(ex => ex.name));
+  return [...new Set([...fromTemplates, ...fromHistory])].sort((a, b) => a.localeCompare(b));
+}
+
+function buildExerciseDatalist() {
+  let dl = document.getElementById('exerciseNameDatalist');
+  if (!dl) {
+    dl = document.createElement('datalist');
+    dl.id = 'exerciseNameDatalist';
+    document.body.appendChild(dl);
+  }
+  dl.innerHTML = getKnownExerciseNames().map(n => `<option value="${n}"></option>`).join('');
 }
 
 // ===================== FREE WORKOUT =====================
@@ -1841,6 +2082,7 @@ function saveFreeWorkout() {
   });
   history.push({ date, dayLabel: sessionName + ' — ' + sessionType, workout });
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+  buildExerciseDatalist();
   showToast('✓ Workout saved for ' + date);
   freeExercises = [];
   freeLog = {};
@@ -1848,7 +2090,9 @@ function saveFreeWorkout() {
 }
 
 // ===================== INIT =====================
+buildExerciseDatalist();
 renderQuickStats();
+checkEndOfDayAutoCommit();
 startAutosaveTimer();
 restoreAutosave();
 syncDayPickerLabels();
