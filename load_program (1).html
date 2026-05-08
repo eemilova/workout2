@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Load New Program · Panda Workout</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f3ecdd;
+    --paper: #fbf6ea;
+    --ink: #1a1815;
+    --muted: #786d5d;
+    --rule: #d8cab0;
+    --rule-soft: #e7dcc4;
+    --accent: #2c5a3d;
+    --accent-bg: #dde6d6;
+    --spice: #b04823;
+    --spice-bg: #f1ddcc;
+    --danger: #9c2f1a;
+    --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-sans);
+    font-feature-settings: "tnum" 1, "ss01" 1;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 32px 18px 60px;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 540px; margin: 0 auto; }
+  h1 {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    margin-bottom: 6px;
+  }
+  .sub {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-weight: 500;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--rule-soft);
+    position: relative;
+  }
+  .sub::after {
+    content: ""; position: absolute; left: 0; bottom: -1px;
+    width: 36px; height: 2px; background: var(--accent);
+  }
+  p { margin: 16px 0; line-height: 1.55; font-size: 14.5px; }
+  p strong { font-weight: 600; }
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--rule-soft);
+    border-radius: 4px;
+    padding: 18px 20px;
+    margin: 14px 0;
+  }
+  .card.cardio { background: #f0e9d8; border-color: var(--rule); }
+  .card h2 {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    margin-bottom: 4px;
+  }
+  .card .day-type {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  .card ol {
+    list-style: decimal inside;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--ink);
+    padding-left: 4px;
+  }
+  .card ol li::marker { color: var(--muted); font-size: 12px; font-weight: 500; }
+  .card ol li .meta { color: var(--muted); font-size: 12.5px; margin-left: 6px; font-weight: 500; }
+  .warn {
+    background: var(--spice-bg);
+    border: 1px solid #e3b9a4;
+    border-radius: 4px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--danger);
+    margin: 18px 0;
+  }
+  .warn strong { font-weight: 600; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+  button, a.btn {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 22px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .primary { background: var(--accent); color: #fff; box-shadow: 0 1px 0 rgba(0,0,0,0.15); }
+  .primary:hover { background: #234a31; }
+  .ghost { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
+  .ghost:hover { background: var(--rule-soft); }
+  .status {
+    margin-top: 24px;
+    padding: 18px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1.55;
+    display: none;
+  }
+  .status.show { display: block; }
+  .status.ok { background: var(--accent-bg); color: var(--accent); border: 1px solid #b8c8ad; }
+  .status.err { background: var(--spice-bg); color: var(--danger); border: 1px solid #e3b9a4; }
+  .status a { color: inherit; text-decoration: underline; font-weight: 700; }
+  .status .verify {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    font-size: 12.5px;
+    line-height: 1.6;
+  }
+  .status .verify code {
+    font-family: ui-monospace, 'Menlo', monospace;
+    font-size: 11.5px;
+    background: rgba(255,255,255,0.4);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Load updated program</h1>
+  <div class="sub">Templates updater · history preserved</div>
+
+  <p>
+    This will replace your <strong>Upper A</strong>, <strong>Upper B</strong>,
+    <strong>Lower A</strong>, and <strong>Lower B</strong> with the updated versions,
+    and add a <strong>Cardio Day</strong>. The order in your sidebar becomes
+    Upper A → Lower A → Cardio → Upper B → Lower B.
+    Your <strong>workout history is not touched</strong>, and any custom days you've
+    added beyond the four built-ins are preserved at the end of the list.
+  </p>
+
+  <div class="warn">
+    <strong>Heads up:</strong> if you've manually edited any of the four built-in days
+    (renamed them, added custom exercises, etc.), those edits will be reset to match the new program.
+  </div>
+
+  <p>What you'll see after applying:</p>
+
+  <div class="card">
+    <h2>Upper Day A</h2>
+    <div class="day-type">Back &amp; Biceps</div>
+    <ol>
+      <li>Vertical Traction <span class="meta">3 × 10-12</span></li>
+      <li>Seated Cable Row (narrow grip) <span class="meta">3 × 12</span></li>
+      <li>Chest-Supported Row Machine <span class="meta">3 × 12-15</span></li>
+      <li>Dumbbell Bicep Curl <span class="meta">2 × 12</span></li>
+      <li>Reverse Pec Deck (Rear Delt Fly) <span class="meta">2 × 12-15</span></li>
+      <li>Elliptical <span class="meta">15 min</span></li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Lower Day A</h2>
+    <div class="day-type">Quad &amp; Glute</div>
+    <ol>
+      <li>Dumbbell Squat <span class="meta">3 × 10</span></li>
+      <li>Leg Press <span class="meta">3 × 12</span></li>
+      <li>Sumo Squat <span class="meta">3 × 10</span></li>
+      <li>Back Extension (glute-focused) <span class="meta">3 × 12-15</span></li>
+      <li>Cable Glute Kickback (Left) <span class="meta">3 × 15</span></li>
+      <li>Cable Glute Kickback (Right) <span class="meta">3 × 15</span></li>
+      <li>Calf Raise <span class="meta">3 × 15</span></li>
+      <li>Abdominal Crunch Machine <span class="meta">3 × 15</span></li>
+      <li>Elliptical <span class="meta">15 min</span></li>
+    </ol>
+  </div>
+
+  <div class="card cardio">
+    <h2>Cardio Day</h2>
+    <div class="day-type">Mid-week walk</div>
+    <ol>
+      <li>Brisk Walk <span class="meta">35 min</span></li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Upper Day B</h2>
+    <div class="day-type">Chest &amp; Shoulders</div>
+    <ol>
+      <li>Chest Press Machine <span class="meta">3 × 12</span></li>
+      <li>Pec Deck Machine <span class="meta">2 × 12-15</span></li>
+      <li>Shoulder Press Machine <span class="meta">3 × 12</span></li>
+      <li>Dumbbell Lateral Raise <span class="meta">2 × 15</span></li>
+      <li>Tricep Pushdown (cable) <span class="meta">2 × 12</span></li>
+      <li>Elliptical <span class="meta">15 min</span></li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Lower Day B</h2>
+    <div class="day-type">Hamstring &amp; Glute</div>
+    <ol>
+      <li>Romanian Deadlift (barbell) <span class="meta">3 × 10</span></li>
+      <li>Leg Press (low &amp; narrow) <span class="meta">2 × 12</span></li>
+      <li>Leg Press (high &amp; wide) <span class="meta">2 × 12</span></li>
+      <li>Walking Lunges <span class="meta">3 × 10 per leg</span></li>
+      <li>Cable Glute Kickback (Left) <span class="meta">2 × 15</span></li>
+      <li>Cable Glute Kickback (Right) <span class="meta">2 × 15</span></li>
+      <li>Calf Raise <span class="meta">3 × 15</span></li>
+      <li>Elliptical <span class="meta">15 min</span></li>
+    </ol>
+  </div>
+
+  <div class="actions">
+    <button class="primary" id="applyBtn">Apply update</button>
+    <a class="ghost btn" href="./">Cancel</a>
+  </div>
+
+  <div class="status" id="status"></div>
+</main>
+
+<script>
+const NEW_TEMPLATES = {
+  upperA: {
+    label: 'Upper Day A',
+    type: 'Back & Biceps',
+    exercises: [
+      { name: 'Vertical Traction', sets: 3, reps: '10-12', note: 'Lats; chest-supported pull', measureType: 'reps' },
+      { name: 'Seated Cable Row (narrow grip)', sets: 3, reps: '12', note: 'Keep elbows tucked', measureType: 'reps' },
+      { name: 'Chest-Supported Row Machine', sets: 3, reps: '12-15', note: 'Squeeze shoulder blades', measureType: 'reps' },
+      { name: 'Dumbbell Bicep Curl', sets: 2, reps: '12', note: 'Controlled movement', measureType: 'reps' },
+      { name: 'Reverse Pec Deck (Rear Delt Fly)', sets: 2, reps: '12-15', note: 'Rear delts; sit facing the pad', measureType: 'reps' },
+      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' }
+    ]
+  },
+  lowerA: {
+    label: 'Lower Day A',
+    type: 'Quad & Glute',
+    exercises: [
+      { name: 'Dumbbell Squat', sets: 3, reps: '10', note: 'Held at sides or goblet', measureType: 'reps' },
+      { name: 'Leg Press', sets: 3, reps: '12', note: 'Standard foot placement', measureType: 'reps' },
+      { name: 'Sumo Squat', sets: 3, reps: '10', note: 'Wide stance, toes out', measureType: 'reps' },
+      { name: 'Back Extension', sets: 3, reps: '12-15', note: 'Glute-focused, hinge at hips, neutral spine', measureType: 'reps' },
+      { name: 'Cable Glute Kickback (Left)', sets: 3, reps: '15', note: 'Left leg', measureType: 'reps' },
+      { name: 'Cable Glute Kickback (Right)', sets: 3, reps: '15', note: 'Right leg', measureType: 'reps' },
+      { name: 'Calf Raise', sets: 3, reps: '15', note: 'Full range', measureType: 'reps' },
+      { name: 'Abdominal Crunch Machine', sets: 3, reps: '15', note: 'Slow & controlled', measureType: 'reps' },
+      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' }
+    ]
+  },
+  cardioDay: {
+    label: 'Cardio Day',
+    type: 'Mid-week walk',
+    exercises: [
+      { name: 'Brisk Walk', sets: 1, reps: '35', note: 'Outdoor or treadmill (slight incline). Conversational pace.', measureType: 'cardio' }
+    ]
+  },
+  upperB: {
+    label: 'Upper Day B',
+    type: 'Chest & Shoulders',
+    exercises: [
+      { name: 'Chest Press Machine', sets: 3, reps: '12', note: 'Full range of motion', measureType: 'reps' },
+      { name: 'Pec Deck Machine', sets: 2, reps: '12-15', note: 'Chest fly; squeeze at center', measureType: 'reps' },
+      { name: 'Shoulder Press Machine', sets: 3, reps: '12', note: 'Do not lock elbows', measureType: 'reps' },
+      { name: 'Dumbbell Lateral Raise', sets: 2, reps: '15', note: 'Light weight, slow', measureType: 'reps' },
+      { name: 'Tricep Pushdown (cable)', sets: 2, reps: '12', note: 'Keep elbows at sides', measureType: 'reps' },
+      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' }
+    ]
+  },
+  lowerB: {
+    label: 'Lower Day B',
+    type: 'Hamstring & Glute',
+    exercises: [
+      { name: 'Romanian Deadlift (barbell)', sets: 3, reps: '10', note: 'Feel stretch in hamstrings; neutral spine', measureType: 'reps' },
+      { name: 'Leg Press (low & narrow)', sets: 2, reps: '12', note: 'Quad focus', measureType: 'reps' },
+      { name: 'Leg Press (high & wide)', sets: 2, reps: '12', note: 'Hamstring & glute focus', measureType: 'reps' },
+      { name: 'Walking Lunges', sets: 3, reps: '10', note: 'Per leg; can alternate weeks with lateral lunges', measureType: 'reps' },
+      { name: 'Cable Glute Kickback (Left)', sets: 2, reps: '15', note: 'Left leg', measureType: 'reps' },
+      { name: 'Cable Glute Kickback (Right)', sets: 2, reps: '15', note: 'Right leg', measureType: 'reps' },
+      { name: 'Calf Raise', sets: 3, reps: '15', note: 'Full range', measureType: 'reps' },
+      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' }
+    ]
+  }
+};
+
+const ORDERED_KEYS = ['upperA', 'lowerA', 'cardioDay', 'upperB', 'lowerB'];
+const TEMPLATE_KEY = 'pw_templates_v3';
+
+document.getElementById('applyBtn').addEventListener('click', () => {
+  const status = document.getElementById('status');
+  try {
+    let existing = {};
+    try { existing = JSON.parse(localStorage.getItem(TEMPLATE_KEY) || '{}') || {}; }
+    catch (e) { existing = {}; }
+
+    const ordered = {};
+    for (const k of ORDERED_KEYS) ordered[k] = NEW_TEMPLATES[k];
+    for (const k in existing) {
+      if (!ORDERED_KEYS.includes(k)) ordered[k] = existing[k];
+    }
+
+    const payload = JSON.stringify(ordered);
+    localStorage.setItem(TEMPLATE_KEY, payload);
+
+    // Read it back and verify
+    const verify = JSON.parse(localStorage.getItem(TEMPLATE_KEY) || '{}');
+    const verifyKeys = Object.keys(verify);
+    const dayCount = verifyKeys.length;
+    const firstExLowerA = verify.lowerA && verify.lowerA.exercises && verify.lowerA.exercises[0]
+      ? verify.lowerA.exercises[0].name : null;
+    const writeOk = firstExLowerA === 'Dumbbell Squat';
+    const historyExists = !!localStorage.getItem('pw_history_v2');
+
+    if (writeOk) {
+      status.className = 'status ok show';
+      status.innerHTML =
+        '<strong>✓ Program updated.</strong> ' +
+        (historyExists ? 'History intact. ' : '') +
+        '<a href="./">Open the app →</a>' +
+        '<div class="verify">' +
+          'Wrote ' + payload.length + ' bytes to <code>' + TEMPLATE_KEY + '</code>. ' +
+          'Verified Lower A starts with "<strong>' + firstExLowerA + '</strong>" — ' +
+          dayCount + ' days total.' +
+          '<br><br>' +
+          'If your app still shows the old program, it\'s likely cached. ' +
+          'Try a hard reload: close the tab fully and reopen the app URL, ' +
+          'or pull-to-refresh in your phone browser.' +
+        '</div>';
+    } else {
+      status.className = 'status err show';
+      status.innerHTML =
+        '<strong>✕ Wrote, but verification failed.</strong> ' +
+        'Expected "Dumbbell Squat" as Lower A\'s first exercise; got "' + firstExLowerA + '".' +
+        '<div class="verify">This likely means your app uses a different storage key. ' +
+        'Open the app, then in your phone browser go to <code>about:blank</code> and run ' +
+        '<code>JSON.stringify(Object.keys(localStorage))</code> in the address bar prefixed with <code>javascript:</code> ' +
+        '(or use desktop dev tools).</div>';
+    }
+    document.getElementById('applyBtn').disabled = true;
+    document.getElementById('applyBtn').style.opacity = '0.4';
+    document.getElementById('applyBtn').style.cursor = 'not-allowed';
+  } catch (e) {
+    status.className = 'status err show';
+    status.textContent = '✕ Could not update: ' + (e.message || e);
+  }
+});
+</script>
+</body>
+</html>
