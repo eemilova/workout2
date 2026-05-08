@@ -1164,6 +1164,9 @@ body {
         <h2>Edit Program</h2>
         <div class="day-meta">Add and remove exercises from each day</div>
       </div>
+      <div class="day-actions">
+        <button class="btn btn-ghost btn-sm" onclick="manualResetProgram()" title="Replace built-in days with the latest default program">↻ Reset to defaults</button>
+      </div>
     </div>
     <div id="templateEditor"></div>
   </div>
@@ -1225,28 +1228,43 @@ body {
 // ===================== DATA =====================
 const STORAGE_KEY = 'pw_history_v2';
 const TEMPLATE_KEY = 'pw_templates_v3';
+const PROGRAM_VERSION = '2026-05-08';
+const PROGRAM_VERSION_KEY = 'pw_program_version';
+const PROGRAM_KEYS = ['upperA', 'lowerA', 'cardioDay', 'upperB', 'lowerB'];
 
 const DEFAULT_TEMPLATES = {
   upperA: {
     label: 'Upper Day A',
     type: 'Back & Biceps',
     exercises: [
+      { name: 'Vertical Traction', sets: 3, reps: '10-12', note: 'Lats; chest-supported pull', measureType: 'reps' },
       { name: 'Seated Cable Row (narrow grip)', sets: 3, reps: '12', note: 'Keep elbows tucked', measureType: 'reps' },
       { name: 'Chest-Supported Row Machine', sets: 3, reps: '12-15', note: 'Squeeze shoulder blades', measureType: 'reps' },
       { name: 'Dumbbell Bicep Curl', sets: 2, reps: '12', note: 'Controlled movement', measureType: 'reps' },
-      { name: 'Face Pulls (cable)', sets: 2, reps: '15', note: 'Great for posture', measureType: 'reps' },
-      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' },
+      { name: 'Reverse Pec Deck (Rear Delt Fly)', sets: 2, reps: '12-15', note: 'Rear delts; sit facing the pad', measureType: 'reps' },
+      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' }
     ]
   },
   lowerA: {
     label: 'Lower Day A',
     type: 'Quad & Glute',
     exercises: [
-      { name: 'Barbell Squat', sets: 3, reps: '10', note: 'Controlled descent', measureType: 'reps' },
-      { name: 'Leg Press', sets: 3, reps: '12', note: 'Low & narrow foot placement', measureType: 'reps' },
-      { name: 'Glute Kickback Machine', sets: 3, reps: '15', note: 'Squeeze at the top', measureType: 'reps' },
+      { name: 'Dumbbell Squat', sets: 3, reps: '10', note: 'Held at sides or goblet', measureType: 'reps' },
+      { name: 'Leg Press', sets: 3, reps: '12', note: 'Standard foot placement', measureType: 'reps' },
+      { name: 'Sumo Squat', sets: 3, reps: '10', note: 'Wide stance, toes out', measureType: 'reps' },
+      { name: 'Back Extension', sets: 3, reps: '12-15', note: 'Glute-focused, hinge at hips, neutral spine', measureType: 'reps' },
+      { name: 'Cable Glute Kickback (Left)', sets: 3, reps: '15', note: 'Left leg', measureType: 'reps' },
+      { name: 'Cable Glute Kickback (Right)', sets: 3, reps: '15', note: 'Right leg', measureType: 'reps' },
+      { name: 'Calf Raise', sets: 3, reps: '15', note: 'Full range', measureType: 'reps' },
       { name: 'Abdominal Crunch Machine', sets: 3, reps: '15', note: 'Slow & controlled', measureType: 'reps' },
-      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' },
+      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' }
+    ]
+  },
+  cardioDay: {
+    label: 'Cardio Day',
+    type: 'Mid-week walk',
+    exercises: [
+      { name: 'Brisk Walk', sets: 1, reps: '35', note: 'Outdoor or treadmill (slight incline). Conversational pace.', measureType: 'cardio' }
     ]
   },
   upperB: {
@@ -1254,21 +1272,25 @@ const DEFAULT_TEMPLATES = {
     type: 'Chest & Shoulders',
     exercises: [
       { name: 'Chest Press Machine', sets: 3, reps: '12', note: 'Full range of motion', measureType: 'reps' },
+      { name: 'Pec Deck Machine', sets: 2, reps: '12-15', note: 'Chest fly; squeeze at center', measureType: 'reps' },
       { name: 'Shoulder Press Machine', sets: 3, reps: '12', note: 'Do not lock elbows', measureType: 'reps' },
       { name: 'Dumbbell Lateral Raise', sets: 2, reps: '15', note: 'Light weight, slow', measureType: 'reps' },
       { name: 'Tricep Pushdown (cable)', sets: 2, reps: '12', note: 'Keep elbows at sides', measureType: 'reps' },
-      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' },
+      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' }
     ]
   },
   lowerB: {
     label: 'Lower Day B',
     type: 'Hamstring & Glute',
     exercises: [
-      { name: 'Romanian Deadlift (dumbbells)', sets: 3, reps: '10', note: 'Feel stretch in hamstrings', measureType: 'reps' },
+      { name: 'Romanian Deadlift (barbell)', sets: 3, reps: '10', note: 'Feel stretch in hamstrings; neutral spine', measureType: 'reps' },
       { name: 'Leg Press (low & narrow)', sets: 2, reps: '12', note: 'Quad focus', measureType: 'reps' },
       { name: 'Leg Press (high & wide)', sets: 2, reps: '12', note: 'Hamstring & glute focus', measureType: 'reps' },
-      { name: 'Glute Kickback Machine', sets: 2, reps: '15', note: 'Both legs equally', measureType: 'reps' },
-      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' },
+      { name: 'Walking Lunges', sets: 3, reps: '10', note: 'Per leg; can alternate weeks with lateral lunges', measureType: 'reps' },
+      { name: 'Cable Glute Kickback (Left)', sets: 2, reps: '15', note: 'Left leg', measureType: 'reps' },
+      { name: 'Cable Glute Kickback (Right)', sets: 2, reps: '15', note: 'Right leg', measureType: 'reps' },
+      { name: 'Calf Raise', sets: 3, reps: '15', note: 'Full range', measureType: 'reps' },
+      { name: 'Elliptical', sets: 1, reps: '15', note: 'Moderate pace', measureType: 'cardio' }
     ]
   }
 };
@@ -2291,6 +2313,67 @@ function renderQuickStats() {
     <div class="stat-chip"><div class="val">${Math.round(totalVol/1000)}t</div><div class="lbl">Total volume (tonnes)</div></div>`;
 }
 
+// ===================== PROGRAM UPDATE =====================
+// Replaces the 5 built-in days with DEFAULT_TEMPLATES, preserves any custom days,
+// keeps history untouched. Used both for the auto-update prompt on first load
+// after a version bump, and the manual "Reset built-in days" button.
+function applyProgramDefaults() {
+  const ordered = {};
+  for (const k of PROGRAM_KEYS) {
+    ordered[k] = JSON.parse(JSON.stringify(DEFAULT_TEMPLATES[k]));
+  }
+  for (const k in templates) {
+    if (!PROGRAM_KEYS.includes(k)) ordered[k] = templates[k];
+  }
+  templates = ordered;
+  localStorage.setItem(TEMPLATE_KEY, JSON.stringify(templates));
+  localStorage.setItem(PROGRAM_VERSION_KEY, PROGRAM_VERSION);
+  syncDayPickerLabels();
+}
+
+function manualResetProgram() {
+  if (!confirm("Reset built-in days to the default program?\n\nUpper A, Lower A, Cardio Day, Upper B, and Lower B will be replaced with the latest version. Custom days you've added are preserved. History is not touched.")) return;
+  applyProgramDefaults();
+  showToast('✓ Program reset to defaults');
+  if (document.getElementById('pageTemplates').classList.contains('active')) {
+    renderTemplateEditor();
+  }
+}
+
+function checkProgramUpdate() {
+  const applied = localStorage.getItem(PROGRAM_VERSION_KEY);
+  if (applied === PROGRAM_VERSION || applied === PROGRAM_VERSION + '_declined') return;
+
+  // Detect "fresh install / no saved templates" case → silently mark as up-to-date,
+  // since the app will already use DEFAULT_TEMPLATES verbatim
+  const stored = localStorage.getItem(TEMPLATE_KEY);
+  if (!stored) {
+    localStorage.setItem(PROGRAM_VERSION_KEY, PROGRAM_VERSION);
+    return;
+  }
+
+  // Already on the new program by content? → mark and skip the prompt
+  try {
+    const t = JSON.parse(stored);
+    const lowerAFirst = t.lowerA && t.lowerA.exercises && t.lowerA.exercises[0];
+    if (lowerAFirst && lowerAFirst.name === 'Dumbbell Squat' && t.cardioDay) {
+      localStorage.setItem(PROGRAM_VERSION_KEY, PROGRAM_VERSION);
+      return;
+    }
+  } catch(e) {}
+
+  // Defer the prompt slightly so the page paints first
+  setTimeout(() => {
+    if (confirm("Updated workout program available. Apply now?\n\nThis refreshes Upper A, Lower A, Cardio Day, Upper B, and Lower B with the latest exercises. Custom days you've added are preserved. History is not touched.")) {
+      applyProgramDefaults();
+      renderQuickStats();
+      showToast('✓ Program updated');
+    } else {
+      localStorage.setItem(PROGRAM_VERSION_KEY, PROGRAM_VERSION + '_declined');
+    }
+  }, 600);
+}
+
 // ===================== EXPORT CSV =====================
 function exportCSV() {
   if (!history.length) { showToast('No data to export'); return; }
@@ -2723,6 +2806,7 @@ startAutosaveTimer();
 restoreAutosave();
 restoreFreeAutosave();
 renderQuickStats();
+checkProgramUpdate();
 </script>
 </body>
 </html>
