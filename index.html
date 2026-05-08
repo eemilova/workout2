@@ -7,7 +7,7 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600&family=Geist:wght@300..700&family=Geist+Mono:wght@400..600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
 <style>
 /* =====================================================================
@@ -53,10 +53,10 @@
   --sh-2: 0 2px 14px rgba(70,55,25,0.07), 0 0 0 1px rgba(70,55,25,0.03);
   --sh-lg: 0 24px 60px rgba(40,30,12,0.28);
 
-  /* type */
-  --font-serif: 'Fraunces', 'Cambria', 'Georgia', serif;
-  --font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'Geist Mono', 'IBM Plex Mono', 'Menlo', monospace;
+  /* type — single family, weight contrast for hierarchy, tabular numbers for data */
+  --font-serif: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist', system-ui, -apple-system, sans-serif;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -71,7 +71,8 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: "ss01", "cv11";
+  /* tabular figures everywhere so numbers line up; SS01 is Geist's slashed zero */
+  font-feature-settings: "tnum" 1, "ss01" 1;
   /* paper-grain atmosphere */
   background-image:
     radial-gradient(circle at 10% 0%, rgba(180,150,80,0.06), transparent 50%),
@@ -117,19 +118,18 @@ body {
 }
 .sidebar-logo h1 {
   font-family: var(--font-serif);
-  font-size: 24px;
-  font-weight: 500;
-  line-height: 1.0;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.05;
   color: var(--ink);
-  letter-spacing: -0.015em;
-  font-variation-settings: "opsz" 96;
+  letter-spacing: -0.02em;
 }
 .sidebar-logo .subtitle {
   font-family: var(--font-mono);
   font-size: 9.5px;
   color: var(--muted);
   margin-top: 10px;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -141,7 +141,7 @@ body {
   font-size: 9.5px;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.08em;
   margin: 0 0 8px 14px;
 }
 
@@ -203,7 +203,7 @@ body {
   font-family: var(--font-mono);
   font-size: 9.5px;
   color: var(--muted);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   margin-top: 3px;
 }
@@ -230,12 +230,11 @@ body {
 }
 .card-title {
   font-family: var(--font-serif);
-  font-size: 22px;
-  font-weight: 500;
+  font-size: 18px;
+  font-weight: 700;
   margin-bottom: 14px;
   color: var(--ink);
-  letter-spacing: -0.01em;
-  font-variation-settings: "opsz" 48;
+  letter-spacing: -0.015em;
 }
 
 /* Day header (page hero) =========================================== */
@@ -259,19 +258,18 @@ body {
 }
 .day-title-block h2 {
   font-family: var(--font-serif);
-  font-size: 42px;
-  font-weight: 500;
+  font-size: 34px;
+  font-weight: 700;
   letter-spacing: -0.025em;
   color: var(--ink);
-  line-height: 1.0;
-  font-variation-settings: "opsz" 144;
+  line-height: 1.05;
 }
 .day-title-block .day-meta {
   font-family: var(--font-mono);
   font-size: 10.5px;
   color: var(--muted);
   margin-top: 10px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 .day-actions {
@@ -303,11 +301,10 @@ body {
 .template-ex-info { flex: 1; min-width: 0; }
 .template-ex-name {
   font-family: var(--font-serif);
-  font-weight: 500;
-  font-size: 15.5px;
+  font-weight: 600;
+  font-size: 14.5px;
   color: var(--ink);
-  letter-spacing: -0.005em;
-  font-variation-settings: "opsz" 24;
+  letter-spacing: -0.01em;
 }
 .template-ex-detail {
   font-family: var(--font-mono);
@@ -388,7 +385,7 @@ body {
   font-family: var(--font-mono);
   font-size: 9.5px;
   color: var(--muted);
-  letter-spacing: 0.15em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .form-group input, .form-group select {
@@ -426,11 +423,10 @@ body {
 }
 .log-ex-name {
   font-family: var(--font-serif);
-  font-weight: 500;
-  font-size: 16px;
+  font-weight: 600;
+  font-size: 15px;
   letter-spacing: -0.01em;
   color: var(--ink);
-  font-variation-settings: "opsz" 24;
 }
 .log-ex-target {
   font-family: var(--font-mono);
@@ -450,18 +446,19 @@ body {
 }
 .log-set-row:last-child { border-bottom: none; }
 .set-num {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   color: var(--muted);
   width: 26px;
-  font-size: 11px;
-  letter-spacing: 0.05em;
+  font-size: 13px;
+  font-weight: 500;
 }
 .set-val {
   flex: 1;
-  font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 500;
   color: var(--ink);
-  letter-spacing: 0.01em;
+  letter-spacing: -0.005em;
 }
 .log-set-inputs {
   display: flex;
@@ -494,7 +491,7 @@ body {
   color: var(--muted);
   display: block;
   margin-bottom: 4px;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -517,11 +514,11 @@ body {
 }
 .history-day-header:hover { background: var(--bg-tint); }
 .history-day-header strong {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 500;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
   color: var(--ink);
-  letter-spacing: 0.04em;
+  letter-spacing: -0.01em;
 }
 .history-day-body { padding: 14px 16px; display: none; }
 .history-day-body.open { display: block; }
@@ -529,17 +526,17 @@ body {
 .history-ex:last-child { margin-bottom: 0; }
 .history-ex-name {
   font-family: var(--font-serif);
-  font-weight: 500;
-  font-size: 14.5px;
-  letter-spacing: -0.005em;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
   color: var(--ink);
 }
 .history-ex-sets {
-  font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
   color: var(--muted);
   margin-top: 3px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
 }
 
 /* Stats ============================================================= */
@@ -569,19 +566,18 @@ body {
 }
 .stat-chip .val {
   font-family: var(--font-serif);
-  font-size: 38px;
-  font-weight: 500;
+  font-size: 34px;
+  font-weight: 700;
   color: var(--accent);
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
   line-height: 1;
-  font-variation-settings: "opsz" 144;
 }
 .stat-chip .lbl {
   font-family: var(--font-mono);
   font-size: 9.5px;
   color: var(--muted);
   margin-top: 10px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
@@ -675,19 +671,18 @@ body {
 }
 .success-title {
   font-family: var(--font-serif);
-  font-size: 32px;
-  font-weight: 500;
+  font-size: 26px;
+  font-weight: 700;
   color: var(--ink);
   letter-spacing: -0.025em;
   margin-bottom: 6px;
-  line-height: 1.05;
-  font-variation-settings: "opsz" 144;
+  line-height: 1.1;
 }
 .success-date {
   font-family: var(--font-mono);
   font-size: 10.5px;
   color: var(--muted);
-  letter-spacing: 0.16em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   margin-bottom: 22px;
 }
@@ -786,7 +781,7 @@ body {
   font-family: var(--font-mono);
   font-size: 9.5px;
   color: var(--muted);
-  letter-spacing: 0.15em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   margin-top: 3px;
 }
@@ -827,17 +822,16 @@ body {
 }
 .active-banner-title {
   font-family: var(--font-serif);
-  font-size: 18px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
   color: #fff;
-  font-variation-settings: "opsz" 48;
 }
 .active-banner-meta {
   font-family: var(--font-mono);
   font-size: 10px;
   color: rgba(255,255,255,0.78);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   margin-top: 5px;
 }
@@ -888,7 +882,7 @@ body {
   display: inline-block;
   font-family: var(--font-mono);
   font-size: 9px;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   padding: 2px 7px;
   border-radius: 3px;
@@ -1752,8 +1746,8 @@ function saveWorkout() {
       s.reps + '\xd7' + s.weight + 'kg'
     ).join(' &middot; ');
     return '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed var(--rule-soft)">' +
-      '<span style="font-weight:500;font-family:var(--font-serif);font-size:14px">' + escapeHtml(ex.name) + '</span>' +
-      '<span style="color:var(--muted);font-family:var(--font-mono);font-size:11px;flex-shrink:0;letter-spacing:0.02em">' + summary + '</span>' +
+      '<span style="font-weight:600;font-family:var(--font-sans);font-size:14px">' + escapeHtml(ex.name) + '</span>' +
+      '<span style="color:var(--muted);font-family:var(--font-sans);font-size:12.5px;flex-shrink:0;font-weight:500">' + summary + '</span>' +
       '</div>';
   }).join('');
   document.getElementById('successOverlay').classList.add('open');
@@ -2049,11 +2043,11 @@ function renderTemplateEditor() {
         <div style="flex:1;min-width:200px">
           <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
             <input id="dlabel_${dayKey}" value="${escapeHtml(day.label)}"
-              style="font-family:var(--font-serif);font-size:22px;font-weight:500;border:none;border-bottom:2px solid var(--rule);background:transparent;width:100%;padding:4px 0;outline:none;color:var(--ink);letter-spacing:-0.015em"
+              style="font-family:var(--font-sans);font-size:18px;font-weight:700;border:none;border-bottom:2px solid var(--rule);background:transparent;width:100%;padding:4px 0;outline:none;color:var(--ink);letter-spacing:-0.02em"
               onchange="updateDayMeta('${dayKey}')" />
           </div>
           <input id="dtype_${dayKey}" value="${escapeHtml(day.type)}"
-            style="font-family:var(--font-mono);font-size:11px;color:var(--muted);border:none;border-bottom:1px dashed var(--rule-soft);background:transparent;width:100%;padding:3px 0;outline:none;letter-spacing:0.12em;text-transform:uppercase"
+            style="font-family:var(--font-sans);font-size:11.5px;color:var(--muted);font-weight:500;border:none;border-bottom:1px dashed var(--rule-soft);background:transparent;width:100%;padding:3px 0;outline:none;letter-spacing:0.06em;text-transform:uppercase"
             placeholder="e.g. Upper Body A"
             onchange="updateDayMeta('${dayKey}')" />
         </div>
