@@ -951,6 +951,9 @@ body {
 /* =====================================================================
    HEALTH ADDITIONS — check-in, glance tiles, charts, data page
    ===================================================================== */
+/* Quick repeated taps (the − and + buttons, the 1–5 scales) must never trigger the phone's double-tap zoom. */
+html { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+button, input, select, summary, label, a { touch-action: manipulation; }
 button:focus-visible, select:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; background: var(--paper); margin-bottom: 14px; max-width: 100%; }
@@ -1736,6 +1739,7 @@ function syncDayPickerLabels() {
 
 // ===================== NAV =====================
 function showPage(name) {
+  flushInputs();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   closeDayPicker();
@@ -2970,6 +2974,7 @@ function restoreFreeAutosave() {
 // Force-save when the page is closed or sent to the background.
 // Phones rarely fire beforeunload, so pagehide and visibilitychange cover them.
 function flushSessions() {
+  try { flushInputs(true); } catch (e) {}
   // Free workout
   if (freeExercises && freeExercises.length > 0) {
     autosaveFreeSession();
@@ -3371,10 +3376,13 @@ function niceStep(raw) {
 function sparkline(vals, color) {
   const pts = [];
   vals.forEach((v, i) => { if (v != null) pts.push([i, v]); });
-  if (pts.length < 2) return '<div class="spark"></div>';
+  // Two or three readings draw as a stray slash, so wait until there is a real trend to show.
+  if (pts.length < 5) return '<div class="spark"></div>';
   const ys = pts.map(p => p[1]);
-  const lo = Math.min(...ys), span = (Math.max(...ys) - lo) || 1, n = (vals.length - 1) || 1;
-  const d = pts.map((p, k) => (k ? 'L' : 'M') + (p[0] / n * 100).toFixed(1) + ' ' + (25 - (p[1] - lo) / span * 22).toFixed(1)).join(' ');
+  const lo = Math.min(...ys), hi = Math.max(...ys), span = hi - lo;
+  const x0 = pts[0][0], xn = (pts[pts.length - 1][0] - x0) || 1;   // stretch from first to last reading, not the whole 30 days
+  const y = v => span ? 25 - (v - lo) / span * 22 : 14;             // identical readings sit as a level line mid-tile
+  const d = pts.map((p, k) => (k ? 'L' : 'M') + ((p[0] - x0) / xn * 100).toFixed(1) + ' ' + y(p[1]).toFixed(1)).join(' ');
   return `<svg class="spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" fill="none" stroke="${color || CHART_GREEN}" stroke-width="1.6" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
 
@@ -3530,7 +3538,7 @@ function applyTheme(rerender) {
   if (meta) meta.setAttribute('content', isDark() ? '#141813' : '#f3ecdd');
   if (rerender) rerenderActive();
 }
-function setTheme(t) { settings.theme = t; saveSettings(); applyTheme(true); }
+function setTheme(t) { flushInputs(); settings.theme = t; saveSettings(); applyTheme(true); }
 if (window.matchMedia) {
   const mq = matchMedia('(prefers-color-scheme: dark)');
   const onScheme = () => { if (settings.theme === 'auto') applyTheme(true); };
@@ -3559,6 +3567,7 @@ function avgCycleLength() {
   return recent.length ? Math.round(mean(recent)) : null;
 }
 function toggleCycleStart(date) {
+  flushInputs();
   const i = settings.cycleStarts.indexOf(date);
   if (i >= 0) settings.cycleStarts.splice(i, 1); else settings.cycleStarts.push(date);
   settings.cycleStarts.sort();
@@ -3599,7 +3608,7 @@ function commitTarget(input, key) {
   store_(r);
   showToast('✓ Target saved');
 }
-function setSetting(key, value) { settings[key] = value; saveSettings(); renderSettings(); }
+function setSetting(key, value) { if (document.activeElement && document.activeElement.id && document.activeElement.id.indexOf('tg_') === 0) flushInputs(); settings[key] = value; saveSettings(); renderSettings(); }
 function renderSettings() {
   const t = settings.targets;
   const val = k => k === 'sleepH' ? (t.sleepMin != null ? Math.round(t.sleepMin / 6) / 10 : '') : (t[k] != null ? t[k] : '');
@@ -3840,12 +3849,23 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 }
 
 // ===================== DAILY CHECK-IN =====================
+// A typed value is normally saved when the field loses focus. On phones, tapping a tab or button
+// does not always take focus away first, so save the field being edited before anything re-draws.
+function flushInputs(keepFocus) {
+  const a = document.activeElement;
+  if (a && a.matches && a.matches('input, select') && a.closest('#checkinBody, #settingsBody')) {
+    a.dispatchEvent(new Event('change'));
+    if (!keepFocus) a.blur();   // so the same value is not saved a second time, e.g. onto another date
+  }
+}
 function openCheckin(date) {
+  flushInputs();
   checkinDate = date || localDateStr();
   showPage('checkin');
   window.scrollTo(0, 0);
 }
 function shiftCheckinDate(n) {
+  flushInputs();
   const onSummary = document.getElementById('pageSummary').classList.contains('active');
   const today = localDateStr();
   let d = addDays(checkinDate, onSummary && summaryMode === 'week' ? n * 7 : n);
@@ -3942,6 +3962,7 @@ function applyPaste(text) {
   else showToast('✓ Filled ' + filled.join(', ') + (skipped.length ? ' · skipped ' + skipped.join(', ') : ''));
 }
 function pasteFromClipboard() {
+  flushInputs();
   const manual = () => { const t = prompt('Paste the text from your shortcut here'); if (t) applyPaste(t); };
   if (navigator.clipboard && navigator.clipboard.readText) navigator.clipboard.readText().then(applyPaste).catch(manual);
   else manual();
@@ -3991,10 +4012,10 @@ function stepWeight(delta) {
   const input = document.getElementById('ciWeight');
   let base = parseNum(input.value);
   if (base == null) {
-    // start from the most recent weight so the first tap is already close
-    const last = latestWith(G.weight);
+    // empty field: step from the most recent weight (the grey number shown in the field)
+    const last = latestWith(G.weight, checkinDate) || latestWith(G.weight);
     if (!last) { input.focus(); return; }
-    base = last.value; delta = 0;
+    base = last.value;
   }
   input.value = fmt1(base + delta);
   commitWeight(input);
@@ -4138,6 +4159,7 @@ let measuresOpen = false;
 
 // ===================== DAY SUMMARY =====================
 function openSummary(date) {
+  flushInputs();
   checkinDate = date || localDateStr();
   showPage('summary');
   window.scrollTo(0, 0);
